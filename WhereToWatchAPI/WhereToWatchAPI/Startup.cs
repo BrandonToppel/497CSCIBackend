@@ -37,6 +37,7 @@ namespace WhereToWatchAPI
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
+                //Swagger implementation for the UI to see how API is working.
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
