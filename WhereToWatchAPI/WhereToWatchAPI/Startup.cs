@@ -11,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using WhereToWatchAPI.Models;
 
 namespace WhereToWatchAPI
 {
@@ -38,9 +39,19 @@ namespace WhereToWatchAPI
             //TODO: Below is the ability to easily connect to a data. First put the connection string for the database in appsettings.json
             //Next a context model needs to be created for ApplicationDbContext. Once that is completed uncomment below
 
-            //services.AddDbContext<ApplicationDbContext>(options =>
-            //  options.UseSqlServer(
-            //      Configuration.GetConnectionString("DefaultConnection")));
+            services.AddDbContext<ApplicationDbContext>(options =>
+              options.UseSqlServer(
+                  Configuration.GetConnectionString("DefaultConnection")));
+            services.AddIdentity<ApplicationUsers, ApplicationRoles>(options =>
+            {
+                //username and password requirements
+                options.User.RequireUniqueEmail = true;
+                options.Password.RequireUppercase = true;
+                options.Password.RequireLowercase = true;
+                options.Password.RequireNonAlphanumeric = true;
+                options.Password.RequiredLength = 8;
+            })
+                .AddEntityFrameworkStores<ApplicationDbContext>();
 
             services.AddControllers();
 
