@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -7,9 +8,11 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using WhereToWatchAPI.Models;
 
@@ -17,6 +20,9 @@ namespace WhereToWatchAPI
 {
     public class Startup
     {
+        private string _jwtKey = null;
+        private string _jwtIssuer = null;
+        private string _jwtAudience = null;
         //This is to deal with CORS 
         readonly string MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
 
@@ -52,7 +58,37 @@ namespace WhereToWatchAPI
                 options.Password.RequiredLength = 8;
             })
                 .AddEntityFrameworkStores<ApplicationDbContext>();
+            services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+          .AddJwtBearer(options =>
+          {
+              options.SaveToken = true;
+              options.RequireHttpsMetadata = true;
+              options.TokenValidationParameters = new TokenValidationParameters
+              {
+                  ValidateIssuer = true,
+                  ValidateAudience = true,
+                    //Audience and Issuer are currently the same, this will be changed 
+                    //when audience is ready
+                    ValidAudience = _jwtAudience,
+                  ValidIssuer = _jwtIssuer,
+                  ClockSkew = TimeSpan.Zero,
+                  IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtKey))
 
+              };
+              options.Events = new JwtBearerEvents
+              {
+                  OnMessageReceived = context =>
+                  {
+                      context.Token = context.Request.Cookies["jwtCookie"];
+                      return Task.CompletedTask;
+                  }
+              };
+          });
             services.AddControllers();
 
             services.AddSwaggerGen();
