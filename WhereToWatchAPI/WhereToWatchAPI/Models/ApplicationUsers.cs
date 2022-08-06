@@ -16,5 +16,6 @@ namespace WhereToWatchAPI.Models
         public string password { get; set; }
         [NotMapped]
         public bool rememberMe { get; set; }
+        public virtual ICollection<Watchlist> Watchlist { get; set; }
     }
 }

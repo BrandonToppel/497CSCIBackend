@@ -15,5 +15,23 @@ namespace WhereToWatchAPI
         {
             
         }
+        public DbSet<Movies> Movies { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder builder)
+        {
+            base.OnModelCreating(builder);
+            builder.Entity<Watchlist>()
+                .HasKey(um => new { um.UserId, um.MoviesId });
+            builder.Entity<Watchlist>()
+                .HasOne(um => um.Users)
+                .WithMany(u => u.Watchlist)
+                .HasForeignKey(um => um.UserId);
+            builder.Entity<Watchlist>()
+                .HasOne(um => um.Movies)
+                .WithMany(m => m.Watchlist)
+                .HasForeignKey(um => um.MoviesId);
+        }
+
+        public DbSet<WhereToWatchAPI.Models.Watchlist> Watchlist { get; set; }
     }
 }
