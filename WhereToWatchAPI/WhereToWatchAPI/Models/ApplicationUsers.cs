@@ -17,5 +17,6 @@ namespace WhereToWatchAPI.Models
         [NotMapped]
         public bool rememberMe { get; set; }
         public virtual ICollection<Watchlist> Watchlist { get; set; }
+        public virtual ICollection<UserSearch> UserSearch { get; set; }
     }
 }

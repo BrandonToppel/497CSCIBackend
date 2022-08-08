@@ -59,7 +59,7 @@ namespace WhereToWatchAPI.Controllers
                 return StatusCode(StatusCodes.Status201Created);
             }
         }
-        private string GenerateJWT(ApplicationUsers users, List<string> roles)
+        private string GenerateJWT(ApplicationUsers users)
         {
             var _jwtKey = Configuration["Jwt:Key"];
             var _jwtIssuer = Configuration["Jwt:Issuer"];
@@ -68,17 +68,11 @@ namespace WhereToWatchAPI.Controllers
             var credentials = new SigningCredentials(secuirtyKey, SecurityAlgorithms.HmacSha256);
             var claims = new List<Claim>
             {
-                new Claim(JwtRegisteredClaimNames.Sub, users.Email),
-                new Claim(JwtRegisteredClaimNames.UniqueName, users.Email),
-                new Claim(ClaimTypes.Email, users.Email)
+                new Claim(JwtRegisteredClaimNames.Sub, users.UserName),
+                new Claim(JwtRegisteredClaimNames.UniqueName, users.UserName),
+                new Claim(ClaimTypes.Name, users.UserName)
             };
 
-            //Roles claims from the List of user roles
-            foreach (var elements in roles)
-            {
-                var r = new Claim(ClaimTypes.Role, elements);
-                claims.Add(r);
-            }
             var token = new JwtSecurityToken(
                 issuer: _jwtIssuer,
                 audience: _jwtAudience,
@@ -114,11 +108,9 @@ namespace WhereToWatchAPI.Controllers
             }
             else
             {
-                //Finding a user by their email because the email in this application must always be unique
-                //it will then allow us to build a list of the users roles to put into the token. 
-                var _user = await _userManager.FindByEmailAsync(user.Email);
-                List<string> roles = (List<string>)await _userManager.GetRolesAsync(_user);
-                var accessToken = GenerateJWT(user, roles);
+
+                var _user = await _userManager.FindByNameAsync(user.UserName);
+                var accessToken = GenerateJWT(user);
                 SetJWTCookie(accessToken);
                 //  await CreateCart(user);
                 return Ok(accessToken);
