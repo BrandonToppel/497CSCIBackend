@@ -15,6 +15,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using WhereToWatchAPI.Models;
+using Newtonsoft.Json;
 
 namespace WhereToWatchAPI
 {
@@ -36,6 +37,10 @@ namespace WhereToWatchAPI
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            _jwtKey = Configuration["Jwt:Key"];
+            _jwtIssuer = Configuration["Jwt:Issuer"];
+            _jwtAudience = Configuration["Jwt:Audience"];
+
             services.AddCors(options =>
             {
                 options.AddPolicy(MyAllowSpecificOrigins,
@@ -89,7 +94,9 @@ namespace WhereToWatchAPI
                   }
               };
           });
-            services.AddControllers();
+            services.AddControllers().AddNewtonsoftJson(options =>
+            options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
+);
 
             services.AddSwaggerGen();
             

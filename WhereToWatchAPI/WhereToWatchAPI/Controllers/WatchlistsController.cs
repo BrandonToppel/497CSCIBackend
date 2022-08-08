@@ -1,10 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
 using WhereToWatchAPI;
 using WhereToWatchAPI.Models;
 
@@ -15,10 +21,14 @@ namespace WhereToWatchAPI.Controllers
     public class WatchlistsController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
+        private readonly UserManager<ApplicationUsers> _userManager;
+        private readonly IConfiguration Configuration;
 
-        public WatchlistsController(ApplicationDbContext context)
+        public WatchlistsController(ApplicationDbContext context, UserManager<ApplicationUsers> userManager, IConfiguration configuration)
         {
             _context = context;
+            _userManager = userManager;
+            Configuration = configuration;
         }
 
         // GET: api/Watchlists
@@ -40,6 +50,32 @@ namespace WhereToWatchAPI.Controllers
             }
 
             return watchlist;
+        }
+
+        //GET: returns the watchlist of a specific user
+        
+        [HttpGet]
+        [Route("GetWatchlist")]
+        public async Task<ActionResult<IEnumerable<Watchlist>>> GetUserWatchlist()
+        {
+            var jwt = Request.Cookies["jwtCookie"];
+            var key = Encoding.ASCII.GetBytes(Configuration["Jwt:Key"]);
+            var handler = new JwtSecurityTokenHandler();
+            var validations = new TokenValidationParameters
+            {
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(key),
+                ValidateIssuer = false,
+                ValidateAudience = false
+            };
+            var claims = handler.ValidateToken(jwt, validations, out var tokenSecure);
+            string user = claims.Identity.Name;
+
+            var myuser = await _userManager.FindByEmailAsync(user);
+
+            var watchlistData = _context.Watchlist.Where(u => u.UserId == myuser.Id).Include(u => u.Movies).ToList();
+
+            return watchlistData;
         }
 
         // PUT: api/Watchlists/5
@@ -77,9 +113,18 @@ namespace WhereToWatchAPI.Controllers
         // POST: api/Watchlists
         // To protect from overposting attacks, enable the specific properties you want to bind to, for
         // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
+       // [Authorize(AuthenticationSchemes = "Bearer")]
         [HttpPost]
         public async Task<ActionResult<Watchlist>> PostWatchlist(Watchlist watchlist)
         {
+            ApplicationUsers newUser = new ApplicationUsers();
+            newUser = await _userManager.FindByNameAsync(watchlist.Users.UserName);
+            Movies newMovie = new Movies();
+            newMovie = _context.Movies.Where(m => m.MovieTitle == watchlist.Movies.MovieTitle).FirstOrDefault();
+
+            watchlist.Movies = newMovie;
+            watchlist.Users = newUser;
+
             _context.Watchlist.Add(watchlist);
             try
             {

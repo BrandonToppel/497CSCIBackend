@@ -80,10 +80,18 @@ namespace WhereToWatchAPI.Controllers
         [HttpPost]
         public async Task<ActionResult<Movies>> PostMovies(Movies movies)
         {
-            _context.Movies.Add(movies);
-            await _context.SaveChangesAsync();
+            if(_context.Movies.Where(x => x.MovieTitle == movies.MovieTitle).FirstOrDefault() == null)
+            {
+                _context.Movies.Add(movies);
+                await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetMovies", new { id = movies.Id }, movies);
+                return CreatedAtAction("GetMovies", new { id = movies.Id }, movies);
+            }
+            else
+            {
+                return Ok();
+            }
+          
         }
 
         // DELETE: api/Movies/5
